@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../state/game_provider.dart';
 import '../services/sound_service.dart';
 import '../services/tts_service.dart';
+import '../services/ad_service.dart';
 import '../widgets/mizan_meter_widget.dart';
 import '../widgets/pillar_inventory_widget.dart';
 import '../widgets/player_pod_widget.dart';
@@ -468,7 +469,9 @@ class GameScreen extends StatelessWidget {
         defeatedPlayer: game.defeatedPlayer,
         onPlayAgain: () {
           Navigator.of(ctx).pop();
-          Navigator.of(context).pop();
+          AdService.instance.showInterstitialThen(() {
+            if (context.mounted) Navigator.of(context).pop();
+          });
         },
         onRetryTawbah: () {
           Navigator.of(ctx).pop();

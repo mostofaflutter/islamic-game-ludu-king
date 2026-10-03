@@ -4,6 +4,7 @@ import '../state/game_provider.dart';
 import '../state/settings_provider.dart';
 import '../services/sound_service.dart';
 import '../widgets/app_drawer.dart';
+import '../widgets/home_banner_ad.dart';
 import 'game_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -74,6 +75,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFF090D16),
+      bottomNavigationBar: const SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            HomeBannerAd(),
+          ],
+        ),
+      ),
       drawer: AppDrawer(
         onOpenRules: () => _showRulesDialog(context),
       ),

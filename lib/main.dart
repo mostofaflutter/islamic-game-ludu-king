@@ -1,11 +1,13 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'services/ad_service.dart';
 import 'state/game_provider.dart';
 import 'state/settings_provider.dart';
 import 'views/home_screen.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(
     MultiProvider(
@@ -16,6 +18,9 @@ void main() {
       child: const SafarEJannahApp(),
     ),
   );
+  // Do not hold the first Flutter frame until the Mobile Ads SDK finishes
+  // initializing. The launch screen can otherwise remain blank on slow devices.
+  unawaited(AdService.instance.initialize());
 }
 
 class SafarEJannahApp extends StatelessWidget {
