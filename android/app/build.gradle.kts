@@ -34,8 +34,8 @@ android {
         applicationId = "com.mostofa.ludoking.islamic_game_ludoking"
         minSdk = 24
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.0.1"
+        versionCode = 3
+        versionName = "2.0.0"
     }
 
     signingConfigs {
