@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../state/game_provider.dart';
 import '../state/settings_provider.dart';
 import '../services/sound_service.dart';
+import '../services/ad_service.dart'; // <-- ১. AdService ইমপোর্ট যুক্ত করা হয়েছে
 import '../widgets/app_drawer.dart';
 import '../widgets/home_banner_ad.dart';
 import 'game_screen.dart';
@@ -50,19 +51,28 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  // <-- ২. গেম স্টার্ট করার সময় ইন্টারস্টিশিয়াল অ্যাড দেখানো হচ্ছে
   void _startGame() {
     final game = Provider.of<GameProvider>(context, listen: false);
     final settings = Provider.of<SettingsProvider>(context, listen: false);
     final names = _nameControllers.map((c) => c.text.trim()).toList();
-    game.startNewGame(
-      playerCount: _vsAi ? 2 : _playerCount,
-      vsAi: _vsAi,
-      customNames: names,
-      language: settings.language,
-    );
 
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const GameScreen()),
+    // প্রথমে ইন্টারস্টিশিয়াল অ্যাড দেখাবে, দেখা শেষ হলে বা ক্লোজ করলে গেম স্ক্রিন চালু হবে
+    AdService().showInterstitialAd(
+      onComplete: () {
+        if (!mounted) return;
+
+        game.startNewGame(
+          playerCount: _vsAi ? 2 : _playerCount,
+          vsAi: _vsAi,
+          customNames: names,
+          language: settings.language,
+        );
+
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const GameScreen()),
+        );
+      },
     );
   }
 
@@ -375,12 +385,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             prefixIcon: Icon(
                               Icons.person,
                               color: index == 0
-                                    ? const Color(0xFF10B981)
-                                    : index == 1
-                                    ? const Color(0xFF3B82F6)
-                                    : index == 2
-                                    ? const Color(0xFFF59E0B)
-                                    : const Color(0xFFEC4899),
+                                  ? const Color(0xFF10B981)
+                                  : index == 1
+                                  ? const Color(0xFF3B82F6)
+                                  : index == 2
+                                  ? const Color(0xFFF59E0B)
+                                  : const Color(0xFFEC4899),
                               size: 20,
                             ),
                             hintText: isBn ? 'খেলোয়াড় ${index + 1} এর নাম' : 'Player ${index + 1} Name',

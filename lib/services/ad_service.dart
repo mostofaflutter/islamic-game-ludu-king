@@ -6,6 +6,9 @@ class AdService {
 
   static final AdService instance = AdService._();
 
+  // ফ্যাক্টরি কনস্ট্রাক্টর (যাতে AdService() সরাসরি কল করা যায়)
+  factory AdService() => instance;
+
   // Test device ID for Realme C5s (hashed ID from Google Mobile Ads SDK logcat)
   static const String realmeTestDeviceId = 'EF5601B2E329A0F40EF7A43F667AC704';
 
@@ -64,6 +67,13 @@ class AdService {
         },
       ),
     );
+  }
+
+  /// HomeScreen-এর জন্য ইন্টারস্টিশিয়াল অ্যাড মেথড
+  void showInterstitialAd({VoidCallback? onComplete}) {
+    showInterstitialThen(() {
+      if (onComplete != null) onComplete();
+    });
   }
 
   void showInterstitialThen(VoidCallback onComplete) {
