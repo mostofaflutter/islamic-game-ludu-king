@@ -31,8 +31,10 @@ class GameScreen extends StatelessWidget {
 
         // Auto show dialogs based on state
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (game.winner != null || game.defeatedPlayer != null) {
+          if ((game.isGameOver && !game.isResultDialogOpen) || (game.defeatedPlayer != null && !game.isResultDialogOpen)) {
             _showResultDialog(context, game);
+          } else if (game.intermediateWinner != null && !game.isIntermediateDialogOpen) {
+            _showIntermediateWinnerDialog(context, game);
           } else if (game.activeQuiz != null) {
             _showQuizDialog(context, game);
           } else if (game.showTawbahDialog) {
@@ -460,13 +462,41 @@ class GameScreen extends StatelessWidget {
     );
   }
 
+  void _showIntermediateWinnerDialog(BuildContext context, GameProvider game) {
+    game.setIntermediateDialogOpen(true);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => ResultDialog(
+        firstWinner: game.firstWinner,
+        isIntermediate: true,
+        onPlayAgain: () {
+          Navigator.of(ctx).pop();
+          game.continueAfterIntermediateWinner();
+        },
+        onContinueGame: () {
+          Navigator.of(ctx).pop();
+          game.continueAfterIntermediateWinner();
+        },
+        onRetryTawbah: () {},
+      ),
+    ).then((_) {
+      game.setIntermediateDialogOpen(false);
+    });
+  }
+
   void _showResultDialog(BuildContext context, GameProvider game) {
+    game.setResultDialogOpen(true);
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => ResultDialog(
         winner: game.winner,
+        firstWinner: game.firstWinner,
+        secondWinner: game.secondWinner,
+        winners: game.winners,
         defeatedPlayer: game.defeatedPlayer,
+        isIntermediate: false,
         onPlayAgain: () {
           Navigator.of(ctx).pop();
           AdService.instance.showInterstitialThen(() {
@@ -478,7 +508,9 @@ class GameScreen extends StatelessWidget {
           game.retryAfterFailure();
         },
       ),
-    );
+    ).then((_) {
+      game.setResultDialogOpen(false);
+    });
   }
 
   Future<bool?> _showExitConfirmDialog(BuildContext context) {

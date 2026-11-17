@@ -34,8 +34,8 @@ android {
         applicationId = "com.mostofa.ludoking.islamic_game_ludoking"
         minSdk = 24
         targetSdk = 36
-        versionCode = 7
-        versionName = "2.0.4"
+        versionCode = 9
+        versionName = "3.0.0"
     }
 
     signingConfigs {
@@ -50,8 +50,12 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
-            isMinifyEnabled = false
-            isShrinkResources = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }

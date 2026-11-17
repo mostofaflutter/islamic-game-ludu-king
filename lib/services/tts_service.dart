@@ -68,28 +68,34 @@ class TtsService {
       }
     }
 
-    await _flutterTts.setSpeechRate(_currentSpeechRate);
-    await _flutterTts.setVolume(_volume);
-    await _flutterTts.setPitch(_currentPitch);
+    try {
+      await _flutterTts.setSpeechRate(_currentSpeechRate);
+      await _flutterTts.setVolume(_volume);
+      await _flutterTts.setPitch(_currentPitch);
 
-    _flutterTts.setStartHandler(() {
-      isSpeakingNotifier.value = true;
-    });
+      _flutterTts.setStartHandler(() {
+        isSpeakingNotifier.value = true;
+      });
 
-    _flutterTts.setCompletionHandler(() {
-      isSpeakingNotifier.value = false;
-    });
+      _flutterTts.setCompletionHandler(() {
+        isSpeakingNotifier.value = false;
+      });
 
-    _flutterTts.setCancelHandler(() {
-      isSpeakingNotifier.value = false;
-    });
+      _flutterTts.setCancelHandler(() {
+        isSpeakingNotifier.value = false;
+      });
 
-    _flutterTts.setErrorHandler((msg) {
+      _flutterTts.setErrorHandler((msg) {
+        if (kDebugMode) {
+          print('TTS runtime error: $msg');
+        }
+        isSpeakingNotifier.value = false;
+      });
+    } catch (e) {
       if (kDebugMode) {
-        print('TTS runtime error: $msg');
+        print('TTS param setup note: $e');
       }
-      isSpeakingNotifier.value = false;
-    });
+    }
 
     _isInitialized = true;
   }

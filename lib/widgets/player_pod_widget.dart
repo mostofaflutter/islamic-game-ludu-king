@@ -25,7 +25,7 @@ class PlayerPodWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final settings = Provider.of<SettingsProvider>(context);
-    final bool canRoll = isCurrentTurn && !player.isAi && !isRolling && !isMoving;
+    final bool canRoll = isCurrentTurn && !player.isAi && !isRolling && !isMoving && !player.isCompleted;
 
     return GestureDetector(
       onTap: canRoll ? onRoll : null,
@@ -145,35 +145,65 @@ class PlayerPodWidget extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: isCurrentTurn
-                      ? [const Color(0xFFFBBF24), const Color(0xFFD97706)]
-                      : [const Color(0xFF475569), const Color(0xFF334155)],
+                  colors: player.isCompleted
+                      ? (player.winnerRank == 1
+                          ? const [Color(0xFFF59E0B), Color(0xFFB45309)]
+                          : const [Color(0xFF0284C7), Color(0xFF0369A1)])
+                      : (isCurrentTurn
+                          ? const [Color(0xFFFBBF24), Color(0xFFD97706)]
+                          : const [Color(0xFF475569), Color(0xFF334155)]),
                 ),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isCurrentTurn ? Colors.white : Colors.white24,
-                  width: isCurrentTurn ? 1.5 : 1,
+                  color: player.isCompleted
+                      ? (player.winnerRank == 1 ? const Color(0xFFFCD34D) : const Color(0xFF7DD3FC))
+                      : (isCurrentTurn ? Colors.white : Colors.white24),
+                  width: (player.isCompleted || isCurrentTurn) ? 1.5 : 1,
                 ),
-                boxShadow: isCurrentTurn
+                boxShadow: (player.isCompleted || isCurrentTurn)
                     ? [
-                  BoxShadow(
-                    color: const Color(0xFFF59E0B).withValues(alpha: 0.5),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
+                        BoxShadow(
+                          color: (player.isCompleted
+                                  ? (player.winnerRank == 1 ? const Color(0xFFF59E0B) : const Color(0xFF38BDF8))
+                                  : const Color(0xFFF59E0B))
+                              .withValues(alpha: 0.5),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
                     : [],
               ),
               child: Center(
-                child: isCurrentTurn && isRolling
-                    ? const Icon(
-                  Icons.casino,
-                  size: 26,
-                  color: Colors.white,
-                )
-                    .animate(onPlay: (controller) => controller.repeat())
-                    .rotate(duration: const Duration(milliseconds: 250))
-                    : _buildMiniDiceFace(isCurrentTurn ? diceValue : 1),
+                child: player.isCompleted
+                    ? Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            player.winnerRank == 1 ? Icons.emoji_events : Icons.military_tech,
+                            size: 20,
+                            color: Colors.white,
+                          ),
+                          Text(
+                            player.winnerRank == 1 ? '1st' : '2nd',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              height: 1.1,
+                              decoration: TextDecoration.none,
+                            ),
+                          ),
+                        ],
+                      )
+                    : (isCurrentTurn && isRolling
+                        ? const Icon(
+                            Icons.casino,
+                            size: 26,
+                            color: Colors.white,
+                          )
+                            .animate(onPlay: (controller) => controller.repeat())
+                            .rotate(duration: const Duration(milliseconds: 250))
+                        : _buildMiniDiceFace(isCurrentTurn ? diceValue : 1)),
               ),
             ),
           ],

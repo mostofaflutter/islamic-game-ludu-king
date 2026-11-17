@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@layout/gma_*,@drawable/gma_*,@drawable/ad_*,@layout/ad_*,@string/ad_*,@string/gma_*,@xml/gma_*"
+    tools:shrinkMode="safe" />

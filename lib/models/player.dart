@@ -119,6 +119,7 @@ class Player {
   int salahShieldTurns;
   final Set<PillarType> collectedPillars;
   bool isCompleted;
+  int? winnerRank;
   bool isFailed;
   String statusMessage;
 
@@ -137,6 +138,7 @@ class Player {
     this.salahShieldTurns = 0,
     Set<PillarType>? collectedPillars,
     this.isCompleted = false,
+    this.winnerRank,
     this.isFailed = false,
     this.statusMessage = 'সফর শুরু হয়েছে...',
   })  : nameBn = nameBn ?? (name ?? 'মুসাফির ${id + 1}'),
@@ -195,6 +197,7 @@ class Player {
     collectedPillars.clear();
     collectedPillars.add(PillarType.kalima);
     isCompleted = false;
+    winnerRank = null;
     isFailed = false;
     statusMessage = 'নতুন সফর শুরু হলো...';
   }

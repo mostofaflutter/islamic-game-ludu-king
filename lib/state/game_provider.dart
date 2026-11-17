@@ -21,9 +21,13 @@ class GameProvider extends ChangeNotifier {
   QuizQuestion? _activeQuiz;
   String _gameLogBn = 'বিসমিল্লাহ বলে খেলা শুরু করুন!';
   String _gameLogEn = 'Start the game with Bismillah!';
-  Player? _winner;
+  final List<Player> _winners = [];
+  Player? _intermediateWinner;
   Player? _defeatedPlayer;
+  bool _isGameOver = false;
   bool _showTawbahDialog = false;
+  bool _isResultDialogOpen = false;
+  bool _isIntermediateDialogOpen = false;
 
   // Getters
   List<Player> get players => _players;
@@ -38,9 +42,25 @@ class GameProvider extends ChangeNotifier {
   QuizQuestion? get activeQuiz => _activeQuiz;
   String get gameLog => _gameLogBn;
   String getGameLog([AppLanguage? lang]) => (lang == AppLanguage.en) ? _gameLogEn : _gameLogBn;
-  Player? get winner => _winner;
+  List<Player> get winners => _winners;
+  Player? get firstWinner => _winners.isNotEmpty ? _winners[0] : null;
+  Player? get secondWinner => _winners.length > 1 ? _winners[1] : null;
+  Player? get winner => _winners.isNotEmpty ? _winners[0] : null;
+  Player? get intermediateWinner => _intermediateWinner;
   Player? get defeatedPlayer => _defeatedPlayer;
+  bool get isGameOver => _isGameOver;
   bool get showTawbahDialog => _showTawbahDialog;
+  bool get isResultDialogOpen => _isResultDialogOpen;
+  bool get isIntermediateDialogOpen => _isIntermediateDialogOpen;
+  int get targetWinnersCount => _players.length >= 3 ? 2 : 1;
+
+  void setResultDialogOpen(bool open) {
+    _isResultDialogOpen = open;
+  }
+
+  void setIntermediateDialogOpen(bool open) {
+    _isIntermediateDialogOpen = open;
+  }
 
   void _setLog({required String bn, required String en}) {
     _gameLogBn = bn;
@@ -88,9 +108,13 @@ class GameProvider extends ChangeNotifier {
     _isMoving = false;
     _activeEventTile = null;
     _activeQuiz = null;
-    _winner = null;
+    _winners.clear();
+    _intermediateWinner = null;
     _defeatedPlayer = null;
+    _isGameOver = false;
     _showTawbahDialog = false;
+    _isResultDialogOpen = false;
+    _isIntermediateDialogOpen = false;
     _setLog(
       bn: 'খেলা শুরু হলো! ${_players.first.getName(AppLanguage.bn)} এর চাল।',
       en: 'Game started! ${_players.first.getName(AppLanguage.en)}\'s turn.',
@@ -99,7 +123,7 @@ class GameProvider extends ChangeNotifier {
   }
 
   Future<void> rollDice() async {
-    if (_isRolling || _isMoving || _winner != null || _activeEventTile != null || _activeQuiz != null || _showTawbahDialog) {
+    if (_isRolling || _isMoving || _isGameOver || _intermediateWinner != null || _activeEventTile != null || _activeQuiz != null || _showTawbahDialog) {
       return;
     }
 
@@ -315,12 +339,35 @@ class GameProvider extends ChangeNotifier {
     // 2. Neki > Gunah
     if (player.neki >= player.gunah && player.collectedPillars.length >= 3) {
       player.isCompleted = true;
-      _winner = player;
+      if (!_winners.contains(player)) {
+        _winners.add(player);
+        player.winnerRank = _winners.length;
+      }
       soundService.playVictory();
-      _setLog(
-        bn: '🏆 আলহামদুলিল্লাহ! ${player.getName(AppLanguage.bn)} পুলসিরাত পার হয়ে জান্নাতুল ফিরদাউসে পৌঁছেছেন!',
-        en: '🏆 Alhamdulillah! ${player.getName(AppLanguage.en)} crossed Sirat and reached Jannat al-Firdaus!',
-      );
+
+      final targetWinners = targetWinnersCount;
+      if (_winners.length >= targetWinners) {
+        _isGameOver = true;
+        _intermediateWinner = null;
+        if (_winners.length >= 2) {
+          _setLog(
+            bn: '🏆 মাশাআল্লাহ! ${_winners[0].getName(AppLanguage.bn)} ফার্স্ট ও ${_winners[1].getName(AppLanguage.bn)} সেকেন্ড উইনার হয়েছেন! খেলা সমাপ্ত!',
+            en: '🏆 MashaAllah! ${_winners[0].getName(AppLanguage.en)} is 1st & ${_winners[1].getName(AppLanguage.en)} is 2nd Winner! Game finished!',
+          );
+        } else {
+          _setLog(
+            bn: '🏆 আলহামদুলিল্লাহ! ${player.getName(AppLanguage.bn)} জান্নাতুল ফিরদাউসে পৌঁছে বিজয়ী হয়েছেন!',
+            en: '🏆 Alhamdulillah! ${player.getName(AppLanguage.en)} reached Jannat al-Firdaus and won!',
+          );
+        }
+      } else {
+        // First winner in 3 or 4 player game - game continues for second winner!
+        _intermediateWinner = player;
+        _setLog(
+          bn: '🏆 মাশাআল্লাহ! ${player.getName(AppLanguage.bn)} ফার্স্ট উইনার হয়েছেন! সেকেন্ড উইনার হওয়ার জন্য বাকিদের খেলা চলবে...',
+          en: '🏆 MashaAllah! ${player.getName(AppLanguage.en)} is 1st Winner! Game continues for 2nd Winner...',
+        );
+      }
     } else {
       _defeatedPlayer = player;
       soundService.playSinWarning();
@@ -330,6 +377,12 @@ class GameProvider extends ChangeNotifier {
       );
     }
     notifyListeners();
+  }
+
+  void continueAfterIntermediateWinner() {
+    _intermediateWinner = null;
+    _isIntermediateDialogOpen = false;
+    _finishTurn();
   }
 
   void retryAfterFailure() {
@@ -348,11 +401,13 @@ class GameProvider extends ChangeNotifier {
   }
 
   void _finishTurn() {
+    if (_isGameOver) return;
+
     final player = currentPlayer;
     player.decrementShield();
 
     // Check if rolled 6 for an extra turn
-    if (_diceValue == 6 && _winner == null) {
+    if (_diceValue == 6 && !_isGameOver && !player.isCompleted) {
       _setLog(
         bn: '🎲 ছক্কা পড়ায় ${player.getName(AppLanguage.bn)} আবার চাল দেওয়ার সুযোগ পেলেন!',
         en: '🎲 Rolled a 6! ${player.getName(AppLanguage.en)} gets an extra turn!',
@@ -362,8 +417,16 @@ class GameProvider extends ChangeNotifier {
       return;
     }
 
-    // Switch to next player
-    _currentPlayerIndex = (_currentPlayerIndex + 1) % _players.length;
+    // Switch to next player who is NOT completed
+    int nextIndex = _currentPlayerIndex;
+    for (int i = 0; i < _players.length; i++) {
+      nextIndex = (nextIndex + 1) % _players.length;
+      if (!_players[nextIndex].isCompleted) {
+        _currentPlayerIndex = nextIndex;
+        break;
+      }
+    }
+
     _setLog(
       bn: 'এখন ${currentPlayer.getName(AppLanguage.bn)} এর চাল।',
       en: 'Now it\'s ${currentPlayer.getName(AppLanguage.en)}\'s turn.',
@@ -374,7 +437,7 @@ class GameProvider extends ChangeNotifier {
   }
 
   void _checkAiTurn() {
-    if (currentPlayer.isAi && _winner == null && _activeEventTile == null && _activeQuiz == null && !_showTawbahDialog) {
+    if (!_isGameOver && !currentPlayer.isCompleted && currentPlayer.isAi && _intermediateWinner == null && _activeEventTile == null && _activeQuiz == null && !_showTawbahDialog) {
       Future.delayed(const Duration(milliseconds: 1200), () {
         rollDice();
       });
